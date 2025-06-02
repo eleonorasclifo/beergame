@@ -15,19 +15,62 @@
       margin: 20px auto;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-    h2 { color: #2c3e50; }
-    label, p { margin: 10px 0 5px; }
-    input, select, button { margin: 5px 0 15px; padding: 8px; width: 100%; max-width: 400px; }
-    /* bordo rosso per i campi mancanti */
-    .required-error { border: 2px solid red !important; }
+    h2 { color: #2c3e50; margin-bottom: 15px; }
+    label, p { margin: 10px 0 5px; font-size: 14px; }
+    input, select, button { margin: 5px 0 15px; padding: 8px; font-size: 14px; }
     button { background-color: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; }
     button:hover { background-color: #2980b9; }
     table { border-collapse: collapse; width: 100%; margin-top: 20px; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-    /* Stili per la tabella nella sezione di gioco */
-    #gameSection table { width: auto; border: none; margin: 10px 0; }
-    #gameSection td { border: none; padding: 6px; }
-    #gameSection td:first-child { text-align: right; white-space: nowrap; padding-right: 10px; }
+
+    /* bordo rosso per i campi mancanti */
+    .required-error { border: 2px solid red !important; }
+
+    /* STILI SOLTANTO PER OVERPRECISION */
+    .overprecision-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .overprecision-row label {
+      flex: 0 0 300px; /* larghezza fissa per la domanda */
+      margin: 0;
+      font-weight: 500;
+      font-size: 14px;
+    }
+    .overprecision-row .inputs-container {
+      display: flex;
+      gap: 10px;
+      flex: 1;
+    }
+    .overprecision-row .inputs-container input {
+      width: 100px;
+    }
+
+    /* STILI PER LA BARRA DI AVANZAMENTO BLU */
+    .progress-wrapper {
+      margin: 20px 0;
+    }
+    .progress-bar {
+      position: relative;
+      background: #e0e0e0;
+      border-radius: 10px;
+      height: 20px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0;
+      background: #3498db; /* BLU */
+      border-radius: 10px 0 0 10px;
+      transition: width 0.3s ease;
+    }
+    .progress-label {
+      text-align: center;
+      margin-top: 5px;
+      font-weight: bold;
+      font-size: 14px;
+    }
   </style>
 
   <!-- SheetJS per leggere XLSX in JavaScript -->
@@ -44,7 +87,6 @@
   <!-- ========================= Admin Panel ========================= -->
   <div class="section hidden" id="adminSection">
     <h2>Admin Panel</h2>
-    <!-- Bottone per scaricare direttamente l’XLSX pubblicato -->
     <button onclick="downloadSheet()">Download Google Sheet XLSX</button>
     <table>
       <thead>
@@ -56,19 +98,17 @@
           <th>Total Cost</th>
         </tr>
       </thead>
-      <tbody id="adminTable">
-        <!-- Qui verranno inserite le righe lette dall’XLSX -->
-      </tbody>
+      <tbody id="adminTable"></tbody>
     </table>
   </div>
 
   <!-- ========================= Overestimation Section ========================= -->
   <div class="section hidden" id="overestimationSection">
     <h2>Overestimation Calculation</h2>
-    <label>1. How many answers do you think you got right out of 5?<span style="color:red;"> *</span></label>
+    <label>1. How many answers do you think you got right out of 5? <span style="color:red;">*</span></label>
     <input type="number" id="estimatedScore" min="0" max="5" placeholder="0–5" />
 
-    <p>2. What is the capital of Australia?<span style="color:red;"> *</span></p>
+    <p>2. What is the capital of Australia? <span style="color:red;">*</span></p>
     <select id="q1">
       <option value="" selected>Choose an option</option>
       <option>Sydney</option>
@@ -77,7 +117,7 @@
       <option>Brisbane</option>
     </select>
 
-    <p>3. What is 12 × 8?<span style="color:red;"> *</span></p>
+    <p>3. What is 12 × 8? <span style="color:red;">*</span></p>
     <select id="q2">
       <option value="" selected>Choose an option</option>
       <option>80</option>
@@ -86,7 +126,7 @@
       <option>92</option>
     </select>
 
-    <p>4. In what year was Google founded?<span style="color:red;"> *</span></p>
+    <p>4. In what year was Google founded? <span style="color:red;">*</span></p>
     <select id="q3">
       <option value="" selected>Choose an option</option>
       <option>1996</option>
@@ -95,7 +135,7 @@
       <option>2001</option>
     </select>
 
-    <p>5. Which metal conducts electricity best?<span style="color:red;"> *</span></p>
+    <p>5. Which metal conducts electricity best? <span style="color:red;">*</span></p>
     <select id="q4">
       <option value="" selected>Choose an option</option>
       <option>Gold</option>
@@ -104,7 +144,7 @@
       <option>Aluminum</option>
     </select>
 
-    <p>6. Where is Mount Kilimanjaro located?<span style="color:red;"> *</span></p>
+    <p>6. Where is Mount Kilimanjaro located? <span style="color:red;">*</span></p>
     <select id="q5">
       <option value="" selected>Choose an option</option>
       <option>Kenya</option>
@@ -119,7 +159,7 @@
   <!-- ========================= Overplacement Section ========================= -->
   <div class="section hidden" id="overplacementSection">
     <h2>Overplacement</h2>
-    <label>Where do you think you rank compared to others in the quiz?<span style="color:red;"> *</span></label>
+    <label>Where do you think you rank compared to others in the quiz? <span style="color:red;">*</span></label>
     <select id="placement">
       <option value="" selected>Choose an option</option>
       <option>Top 10%</option>
@@ -131,37 +171,91 @@
     <button onclick="startOverprecision()">Next</button>
   </div>
 
-  <!-- ========================= Overprecision Section ========================= -->
+  <!-- ========================= Overprecision Section (solo layout modificato) ========================= -->
   <div class="section hidden" id="overprecisionSection">
     <h2>Overprecision</h2>
-    <p>With 90% confidence, estimate the following ranges (all fields obbligatori):</p>
+    <p>With 90% confidence, estimate the following ranges (all fields required):</p>
 
-    <label>1. Population of France (in millions):<span style="color:red;"> *</span></label>
-    <input type="number" id="franceMin" placeholder="Min" /> to <input type="number" id="franceMax" placeholder="Max" />
+    <!-- Domanda 1 -->
+    <div class="overprecision-row">
+      <label for="franceMin">1. Population of France (in millions): <span style="color:red;">*</span></label>
+      <div class="inputs-container">
+        <input type="number" id="franceMin" placeholder="Min" />
+        <input type="number" id="franceMax" placeholder="Max" />
+      </div>
+    </div>
 
-    <label>2. Year the telephone was invented:<span style="color:red;"> *</span></label>
-    <input type="number" id="phoneMin" placeholder="Min" /> to <input type="number" id="phoneMax" placeholder="Max" />
+    <!-- Domanda 2 -->
+    <div class="overprecision-row">
+      <label for="phoneMin">2. Year the telephone was invented: <span style="color:red;">*</span></label>
+      <div class="inputs-container">
+        <input type="number" id="phoneMin" placeholder="Min" />
+        <input type="number" id="phoneMax" placeholder="Max" />
+      </div>
+    </div>
 
-    <label>3. Distance from Rome to Berlin (km):<span style="color:red;"> *</span></label>
-    <input type="number" id="romeMin" placeholder="Min" /> to <input type="number" id="romeMax" placeholder="Max" />
+    <!-- Domanda 3 -->
+    <div class="overprecision-row">
+      <label for="romeMin">3. Distance from Rome to Berlin (km): <span style="color:red;">*</span></label>
+      <div class="inputs-container">
+        <input type="number" id="romeMin" placeholder="Min" />
+        <input type="number" id="romeMax" placeholder="Max" />
+      </div>
+    </div>
 
-    <label>4. Average liters of blood in a human body:<span style="color:red;"> *</span></label>
-    <input type="number" id="bloodMin" placeholder="Min" /> to <input type="number" id="bloodMax" placeholder="Max" />
+    <!-- Domanda 4 -->
+    <div class="overprecision-row">
+      <label for="bloodMin">4. Average liters of blood in a human body: <span style="color:red;">*</span></label>
+      <div class="inputs-container">
+        <input type="number" id="bloodMin" placeholder="Min" />
+        <input type="number" id="bloodMax" placeholder="Max" />
+      </div>
+    </div>
 
-    <label>5. Number of weeks in a year:<span style="color:red;"> *</span></label>
-    <input type="number" id="weeksMin" placeholder="Min" /> to <input type="number" id="weeksMax" placeholder="Max" />
+    <!-- Domanda 5 -->
+    <div class="overprecision-row">
+      <label for="weeksMin">5. Number of weeks in a year: <span style="color:red;">*</span></label>
+      <div class="inputs-container">
+        <input type="number" id="weeksMin" placeholder="Min" />
+        <input type="number" id="weeksMax" placeholder="Max" />
+      </div>
+    </div>
 
-    <button onclick="startGame()">Start Beer Game</button>
+    <button onclick="showRules()">Start Beer Game</button>
   </div>
 
-  <!-- ========================= Beer Game Section ========================= -->
+  <!-- ========================= Rules Section (nuova) ========================= -->
+  <div class="section hidden" id="rulesSection">
+    <h2>Simulation Rules</h2>
+    <p>In this simulation, you play the role of a Distributor in a beer supply chain.</p>
+    <p>Every week you receive an order from the Wholesaler and you have to decide how many cases to order from the Factory.</p>
+    <p>Your goal is to manage your inventory as best as possible: avoid both backlogs and excessive accumulations.</p>
+
+    <p><strong>Warning:</strong></p>
+    <ul>
+      <li>The final customer demand may vary, but it is not visible to you.</li>
+      <li>Orders and deliveries arrive late, so you will have to plan carefully and adapt your decisions week after week.</li>
+    </ul>
+
+    <p>Enter your order each week in the <em>"Order to Factory"</em> field and click <em>"Submit Order"</em>.</p>
+
+    <button onclick="beginGame()">Begin Simulation</button>
+  </div>
+
+  <!-- ========================= Beer Game Section (con barra blu) ========================= -->
   <div class="section hidden" id="gameSection">
     <h2>Beer Game – Distributor Role</h2>
+
+    <!-- Barra di avanzamento BLU -->
+    <div class="progress-wrapper">
+      <div class="progress-bar">
+        <div id="progressFill" class="progress-fill"></div>
+      </div>
+      <div id="progressLabel" class="progress-label">Week: 1 / 36</div>
+    </div>
+
+    <!-- Tabella dei valori -->
     <table>
-      <tr>
-        <td><strong>Week:</strong></td>
-        <td><span id="week">1</span> / 36</td>
-      </tr>
       <tr>
         <td><strong>Wholesaler order:</strong></td>
         <td><span id="demand">4</span></td>
@@ -191,6 +285,7 @@
         </td>
       </tr>
     </table>
+
     <button onclick="nextWeek()">Submit Order</button>
   </div>
 
@@ -242,20 +337,18 @@
     });
 
     // ---------- Funzioni di navigazione tra le sezioni con validazione ----------
-
     function startOverestimation() {
       nickname = document.getElementById("nickname").value.trim();
       const nickField = document.getElementById("nickname");
       nickField.classList.remove("required-error");
 
       if (!nickname) {
-        alert("Please enter a nickname");
+        alert("Please fill all fields to proceed");
         nickField.classList.add("required-error");
         return;
       }
 
       if (nickname === "admin") {
-        // Chiedo la password
         const pwd = prompt("Enter password:");
         if (pwd === "password") {
           document.getElementById("nicknameSection").classList.add("hidden");
@@ -272,32 +365,28 @@
     }
 
     function startOverplacement() {
-      // Rimuovo stili di errore precedenti
       const estimated = document.getElementById("estimatedScore");
-      const selects = ["q1","q2","q3","q4","q5"];
+      const selects = ["q1", "q2", "q3", "q4", "q5"];
       estimated.classList.remove("required-error");
       selects.forEach(id => document.getElementById(id).classList.remove("required-error"));
 
-      let missingFields = [];
+      let missing = false;
 
-      // Controllo estimatedScore
       if (estimated.value.trim() === "" || isNaN(estimated.value) ||
           Number(estimated.value) < 0 || Number(estimated.value) > 5) {
-        missingFields.push("Estimated Score (0–5)");
+        missing = true;
         estimated.classList.add("required-error");
       }
-
-      // Controllo selezioni
-      selects.forEach((id, idx) => {
+      selects.forEach(id => {
         const sel = document.getElementById(id);
         if (sel.value.trim() === "") {
-          missingFields.push(`Question ${idx + 1}`);
+          missing = true;
           sel.classList.add("required-error");
         }
       });
 
-      if (missingFields.length > 0) {
-        alert("Please fill: " + missingFields.join(", "));
+      if (missing) {
+        alert("Please fill all fields to proceed");
         return;
       }
 
@@ -310,7 +399,7 @@
       placement.classList.remove("required-error");
 
       if (placement.value.trim() === "") {
-        alert("Please select your placement");
+        alert("Please fill all fields to proceed");
         placement.classList.add("required-error");
         return;
       }
@@ -319,41 +408,65 @@
       document.getElementById("overprecisionSection").classList.remove("hidden");
     }
 
-    function startGame() {
-      // Campi Overprecision
+    // Dopo Overprecision, mostro le regole
+    function showRules() {
+      // Validazione Overprecision:
       const fields = [
-        { id: "franceMin", name: "France Min" },
-        { id: "franceMax", name: "France Max" },
-        { id: "phoneMin", name: "Phone Year Min" },
-        { id: "phoneMax", name: "Phone Year Max" },
-        { id: "romeMin", name: "Rome-Berlin Min" },
-        { id: "romeMax", name: "Rome-Berlin Max" },
-        { id: "bloodMin", name: "Blood Liters Min" },
-        { id: "bloodMax", name: "Blood Liters Max" },
-        { id: "weeksMin", name: "Weeks/Year Min" },
-        { id: "weeksMax", name: "Weeks/Year Max" }
+        { min: document.getElementById("franceMin"), max: document.getElementById("franceMax") },
+        { min: document.getElementById("phoneMin"), max: document.getElementById("phoneMax") },
+        { min: document.getElementById("romeMin"), max: document.getElementById("romeMax") },
+        { min: document.getElementById("bloodMin"), max: document.getElementById("bloodMax") },
+        { min: document.getElementById("weeksMin"), max: document.getElementById("weeksMax") }
       ];
 
-      let missingFields = [];
-      fields.forEach(f => {
-        const inp = document.getElementById(f.id);
-        inp.classList.remove("required-error");
-        if (inp.value.trim() === "" || isNaN(inp.value)) {
-          missingFields.push(f.name);
-          inp.classList.add("required-error");
+      let missing = false;
+      fields.forEach(pair => {
+        pair.min.classList.remove("required-error");
+        pair.max.classList.remove("required-error");
+        if (pair.min.value.trim() === "" || isNaN(pair.min.value)) {
+          missing = true;
+          pair.min.classList.add("required-error");
+        }
+        if (pair.max.value.trim() === "" || isNaN(pair.max.value)) {
+          missing = true;
+          pair.max.classList.add("required-error");
         }
       });
 
-      if (missingFields.length > 0) {
-        alert("Please fill: " + missingFields.join(", "));
+      if (missing) {
+        alert("Please fill all fields to proceed");
         return;
       }
 
+      let invalidRange = false;
+      fields.forEach(pair => {
+        const minVal = parseFloat(pair.min.value);
+        const maxVal = parseFloat(pair.max.value);
+        if (maxVal < minVal) {
+          invalidRange = true;
+          pair.min.classList.add("required-error");
+          pair.max.classList.add("required-error");
+        }
+      });
+
+      if (invalidRange) {
+        alert("Each “Max” must be greater than or equal to its corresponding “Min”");
+        return;
+      }
+
+      // Se Overprecision OK, mostro la sezione regole
       document.getElementById("overprecisionSection").classList.add("hidden");
-      document.getElementById("gameSection").classList.remove("hidden");
+      document.getElementById("rulesSection").classList.remove("hidden");
     }
 
-    // ---------- Logica del Beer Game (per ogni settimana) ----------
+    // Dopo aver letto le regole, si inizia il gioco vero e proprio
+    function beginGame() {
+      document.getElementById("rulesSection").classList.add("hidden");
+      document.getElementById("gameSection").classList.remove("hidden");
+      // Imposta grafica iniziale della barra (week = 1)
+      updateProgressBar();
+    }
+
     function nextWeek() {
       const demand = week <= 4 ? 4 : 8;
       const order = parseInt(document.getElementById("orderInput").value);
@@ -367,14 +480,18 @@
       costs.push(cost);
       totalCost += cost;
 
-      // Aggiorno valori a schermo
-      document.getElementById("week").textContent = week + 1;
-      document.getElementById("demand").textContent = week < 4 ? 4 : 8;
+      // Incremento settimana e aggiorno barra
+      week++;
+      updateProgressBar();
+
+      // Aggiorno valori a schermo (demand, inventory, backlog, delivery)
+      document.getElementById("demand").textContent = week <= 4 ? 4 : 8;
       document.getElementById("inventory").textContent = inventory;
       document.getElementById("backlog").textContent = backlog;
       document.getElementById("delivery").textContent = delivery;
 
-      if (++week > 36) {
+      // Quando si supera la settimana 36, mostriamo i risultati finali
+      if (week > 36) {
         document.getElementById("gameSection").classList.add("hidden");
         document.getElementById("finalResults").classList.remove("hidden");
 
@@ -420,7 +537,22 @@
       }
     }
 
-    // ---------- Caricamento dati dall’XLSX pubblicato ----------
+    // Funzione di supporto per aggiornare la barra di avanzamento
+    function updateProgressBar() {
+      const fillDiv = document.getElementById("progressFill");
+      const labelDiv = document.getElementById("progressLabel");
+      const percentage = Math.min((week / 36) * 100, 100);
+      fillDiv.style.width = percentage + "%";
+      labelDiv.textContent = `Week: ${week} / 36`;
+    }
+
+    // ---------- Funzioni di navigazione iniziale già esistenti ----------
+    function startOverpression() {
+      // (attenzione: c’è un typo in “startOverpression” nell’originale? 
+      // Non c’è: qui usiamo “startOverestimation” e “startOverplacement” etc.)
+    }
+
+    // Funzione per leggere i dati da Google Sheet
     function loadXlsxData() {
       const tbody = document.getElementById("adminTable");
       tbody.innerHTML = "";
@@ -431,16 +563,12 @@
           return response.arrayBuffer();
         })
         .then((arrayBuffer) => {
-          // Lettura del workbook
           const data = new Uint8Array(arrayBuffer);
           const workbook = XLSX.read(data, { type: "array" });
-          // Prendo il primo foglio
           const firstSheetName = workbook.SheetNames[0];
           const sheet = workbook.Sheets[firstSheetName];
-          // Converto in array di array (comprese intestazioni)
           const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-          // Se ci sono meno di 2 righe (solo intestazioni), mostro “No data”
           if (rows.length < 2) {
             const rigaVuota = document.createElement("tr");
             rigaVuota.innerHTML = `<td colspan="5">No data</td>`;
@@ -448,12 +576,9 @@
             return;
           }
 
-          // Rigiro ogni riga partendo da i=1 (salto intestazioni)
           for (let i = 1; i < rows.length; i++) {
             const cols = rows[i];
-            // Se la prima cella (nickname) è assente/ vuota, salto
             if (!cols[0]) continue;
-
             const riga = document.createElement("tr");
             riga.innerHTML = `
               <td>${cols[0]}</td>
@@ -473,7 +598,7 @@
         });
     }
 
-    // ---------- Download diretto dell’XLSX ----------
+    // Funzione per scaricare lo sheet in .xlsx
     function downloadSheet() {
       window.open(SHEET_XLSX_URL, "_blank");
     }
