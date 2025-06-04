@@ -77,22 +77,21 @@
       right: 20px;
       font-size: 14px;
     }
- #langSwitcher button {
-  background: none;
-  border: 0px solid #3498db;
-  color: #3498db;
-  padding: 4px 10px;
-  border-radius: 4px;
-  font-weight: bold;
-  transition: background 0.2s, color 0.2s;
-  margin-left: 0px; /* se vuoi mantenere lo spazio tra i bottoni */
-}
-
-#langSwitcher button.selected {
-  background: #3498db;
-  color: white;
-}
-
+    #langSwitcher button {
+      background: none;
+      border: 1px solid #3498db;
+      color: #3498db;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-weight: bold;
+      transition: background 0.2s, color 0.2s;
+      margin-left: 5px;
+      cursor: pointer;
+    }
+    #langSwitcher button.selected {
+      background: #3498db;
+      color: white;
+    }
   </style>
 
   <!-- SheetJS per caricare l’XLSX nell’Admin Panel -->
@@ -264,10 +263,10 @@
     <p><strong data-i18n-key="warningLabel">Warning:</strong></p>
     <ul>
       <li data-i18n-key="warn1">The final customer demand may vary, but it is not visible to you.</li>
-      <li data-i18n-key="warn2">Orders and deliveries arrive late, so you will have to plan carefully and adapt your decisions week after week.</li>
+      <li data-i18n-key="warn2">Orders and deliveries arrive late, so you will have to plan carefully and adapt your decisions week by week.</li>
     </ul>
 
-    <p data-i18n-key="rulesLine4">Enter your order each week in the <em>"Order to Factory"</em> field and click <em data-i18n-key="clickSubmitOrder">"Submit Order"</em>.</p>
+    <p data-i18n-key="rulesLine4">Enter your order each week in the <em>“Order to Factory”</em> field and click <em data-i18n-key="clickSubmitOrder">“Submit Order”</em>.</p>
 
     <button data-i18n-key="btnBeginSim" onclick="beginGame()">Begin Simulation</button>
   </div>
@@ -320,27 +319,45 @@
   </div>
 
   <!-- ========================= Final Results Section ========================= -->
-  <div class="section hidden" id="finalResults">
-    <h2 data-i18n-key="finalResultsTitle">Final Results</h2>
-    <p id="costOutput"></p>
-    <table>
-      <thead>
-        <tr>
-          <th data-i18n-key="thNickname">Nickname</th>
-          <th data-i18n-key="thOverest">Overestimation %</th>
-          <th data-i18n-key="thOverplac">Overplacement %</th>
-          <th data-i18n-key="thOverprec">Overprecision %</th>
-          <th data-i18n-key="thOCI">OCI %</th>
-          <th data-i18n-key="thTotalCost">Total Cost</th>
-        </tr>
-      </thead>
-      <tbody id="resultsTable"></tbody>
-    </table>
-  </div>
+<div class="section hidden" id="finalResults">
+  <h2 data-i18n-key="finalResultsTitle">Final Results</h2>
+
+  <!--  → Nuovo paragrafo “Grazie per aver giocato”  -->
+  <p id="thankYou" data-i18n-key="thankYou"></p>
+
+  <!--  → Mostro nickname e code  -->
+  <p>
+    <span data-i18n-key="labelYourNick"></span>
+    <span id="finalNickname"></span>
+  </p>
+  <p>
+    <span data-i18n-key="labelYourCode"></span>
+    <span id="finalCode"></span>
+  </p>
+
+  <!--  → Qui rimane l'output del costo  -->
+  <p id="costOutput"></p>
+
+  <!--  → Tabella riassuntiva (stessi header di prima)  -->
+  <table>
+    <thead>
+      <tr>
+        <th data-i18n-key="thNickname">Nickname</th>
+        <th data-i18n-key="thOverest">Overestimation %</th>
+        <th data-i18n-key="thOverplac">Overplacement %</th>
+        <th data-i18n-key="thOverprec">Overprecision %</th>
+        <th data-i18n-key="thOCI">OCI %</th>
+        <th data-i18n-key="thTotalCost">Total Cost</th>
+      </tr>
+    </thead>
+    <tbody id="resultsTable"></tbody>
+  </table>
+</div>
+
 
   <!-- ========================= SCRIPT ========================= -->
   <script>
-    // Dizionario traduzioni
+    // -------------------- Dizionario traduzioni --------------------
     const translations = {
       en: {
         title:                 "Overconfidence & Beer Game",
@@ -379,8 +396,8 @@
         rulesLine3:            "Your goal is to manage your inventory as best as possible: avoid both backlogs and excessive accumulations.",
         warningLabel:          "Warning:",
         warn1:                 "The final customer demand may vary, but it is not visible to you.",
-        warn2:                 "Orders and deliveries arrive late, so you will have to plan carefully and adapt your decisions week after week.",
-        rulesLine4:            "Enter your order each week in the <em>\"Order to Factory\"</em> field and click <em>\"Submit Order\"</em>.",
+        warn2:                 "Orders and deliveries arrive late, so you will have to plan carefully and adapt your decisions week by week.",
+        rulesLine4:            "Enter your order each week in the <em>“Order to Factory”</em> field and click <em>“Submit Order”</em>.",
         btnBeginSim:           "Begin Simulation",
         gameTitle:             "Beer Game – Distributor Role",
         labelWholesalerOrder:  "Wholesaler order:",
@@ -389,7 +406,13 @@
         labelLastDelivery:     "Last delivery:",
         labelOrderToFactory:   "Order to factory:",
         btnSubmitOrder:        "Submit Order",
-        finalResultsTitle:     "Final Results"
+        finalResultsTitle:     "Final Results",
+        thankYou:              "Thank you for playing!",
+        labelYourNick:         "Your nickname is: ",
+        labelYourCode:         "Your unique code is: "
+
+
+
       },
       it: {
         title:                 "Overconfidence & Beer Game",
@@ -405,10 +428,10 @@
         thTotalCost:           "Costo Totale",
         overestimationCalcTitle: "Calcolo Overestimation",
         qEst1:                 "1. Quante risposte pensi di aver indovinato su 5? <span style=\"color:red;\">*</span>",
-        qEst2:                 "2. Qual è la capitale dell'Australia? <span style=\"color:red;\">*</span>",
+        qEst2:                 "2. Qual è la capitale dell’Australia? <span style=\"color:red;\">*</span>",
         qEst3:                 "3. Quanto fa 12 × 8? <span style=\"color:red;\">*</span>",
         qEst4:                 "4. In che anno è stata fondata Google? <span style=\"color:red;\">*</span>",
-        qEst5:                 "5. Quale metallo conduce meglio l'elettricità? <span style=\"color:red;\">*</span>",
+        qEst5:                 "5. Quale metallo conduce meglio l’elettricità? <span style=\"color:red;\">*</span>",
         qEst6:                 "6. Dove si trova il Monte Kilimanjaro? <span style=\"color:red;\">*</span>",
         optChoose:             "Scegli un’opzione",
         btnNext:               "Avanti",
@@ -428,8 +451,8 @@
         rulesLine3:            "Il tuo obiettivo è gestire al meglio l’inventario: evitare sia arretrati sia accumuli eccessivi.",
         warningLabel:          "Attenzione:",
         warn1:                 "La domanda del cliente finale può variare, ma non è visibile a te.",
-        warn2:                 "Ordini e consegne arrivano in ritardo, quindi dovrai pianificare con cura e adattare le tue decisioni settimana dopo settimana.",
-        rulesLine4:            "Inserisci il tuo ordine ogni settimana nel campo <em>\"Order to Factory\"</em> e fai clic su <em>\"Submit Order\"</em>.",
+        warn2:                 "Ordini e consegne arrivano in ritardo, quindi dovrai pianificare e adattare le tue decisioni settimana dopo settimana.",
+        rulesLine4:            "Inserisci il tuo ordine ogni settimana nel campo <em>“Order to Factory”</em> e fai clic su <em>“Submit Order”</em>.",
         btnBeginSim:           "Inizia Simulazione",
         gameTitle:             "Beer Game – Ruolo Distributore",
         labelWholesalerOrder:  "Ordine dal Grossista:",
@@ -438,7 +461,11 @@
         labelLastDelivery:     "Ultima consegna:",
         labelOrderToFactory:   "Ordine alla fabbrica:",
         btnSubmitOrder:        "Invia Ordine",
-        finalResultsTitle:     "Risultati Finali"
+        finalResultsTitle:     "Risultati Finali",
+        thankYou:              "Grazie per aver giocato!",
+        labelYourNick:         "Il tuo nickname è: ",
+        labelYourCode:         "Il tuo codice univoco è: "
+
       }
     };
 
@@ -472,7 +499,18 @@
     // Applico subito la lingua di default
     applyTranslations();
 
-    // ==================== Resto del codice (invariato) ====================
+    // ------------------- Generazione codice a 6 cifre -------------------
+    function generateCode6() {
+      let code = "";
+      for (let i = 0; i < 6; i++) {
+        code += Math.floor(Math.random() * 10);
+      }
+      return code;
+    }
+
+    let userCode = ""; // variabile globale per tenere in memoria il codice
+
+    // ==================== Resto del codice ====================
 
     // Valori “veri” per overprecision, costanti
     const TRUE_VALUES = {
@@ -506,7 +544,7 @@
       });
     });
 
-    // ---------- Funzioni di navigazione tra le sezioni ----------
+    // ==================== Funzioni di navigazione tra le sezioni ====================
     function startOverestimation() {
       nickname = document.getElementById("nickname").value.trim();
       const nickField = document.getElementById("nickname");
@@ -514,28 +552,41 @@
 
       if (!nickname) {
         alert(currentLang === "it"
-          ? "Per favore compila tutti i campi per procedere"
-          : "Please fill all fields to proceed");
+          ? "Per favore inserisci un nickname"
+          : "Please enter a nickname");
         nickField.classList.add("required-error");
         return;
       }
 
       if (nickname === "admin") {
-        const pwd = prompt(currentLang === "it"
-          ? "Inserisci la password:"
-          : "Enter password:");
+        const pwd = prompt(currentLang === "it" ? "Inserisci la password:" : "Enter password:");
         if (pwd === "password") {
           document.getElementById("nicknameSection").classList.add("hidden");
           document.getElementById("adminSection").classList.remove("hidden");
           loadXlsxData();
         } else {
-          alert(currentLang === "it"
-            ? "Password errata"
-            : "Wrong password");
+          alert(currentLang === "it" ? "Password errata" : "Wrong password");
         }
         return;
       }
 
+      // ① Genero il codice a 6 cifre e lo salvo
+      userCode = generateCode6();
+
+      // (facoltativo) console.log("Il tuo codice univoco:", userCode);
+
+      // ② Invio subito nickname + code
+      fetch(
+        "https://script.google.com/macros/s/AKfycbwJU4iJM9LxfrFLxsDcOvYvFDf52_u0xTXCFn_SHJlKCLjGFXv9lC27ld_xjr0SZuqm/exec",
+        {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nickname: nickname, code: userCode })
+        }
+      ).catch(err => console.warn("Invio nickname+code fallito:", err));
+
+      // ③ Passo alla sezione successiva
       document.getElementById("nicknameSection").classList.add("hidden");
       document.getElementById("overestimationSection").classList.remove("hidden");
     }
@@ -732,6 +783,7 @@
         // Preparo l'oggetto dati da inviare
         const data = {
           nickname: nickname,
+          code:      userCode,
           estimatedScore: estimated,
           quizAnswers: userAnswers,
           placement: placement,
@@ -767,6 +819,14 @@
             body: JSON.stringify(data),
           }
         );
+
+
+        // → Prima di nascondere il gameSection, popolo il “thank you” e nickname/code
+document.getElementById("thankYou").textContent = translations[currentLang].thankYou;
+document.getElementById("finalNickname").textContent = nickname;
+document.getElementById("finalCode").textContent = userCode;
+
+
 
         // Nascondo il gioco e mostro i risultati finali
         document.getElementById("gameSection").classList.add("hidden");
@@ -827,11 +887,11 @@
 
             // Leggo solo i campi richiesti:
             const nickname           = cols[0]  !== undefined ? cols[0]  : "";
-            const overestimationPerc = cols[20] !== undefined ? cols[20] : "";
-            const overplacementPerc  = cols[21] !== undefined ? cols[21] : "";
-            const overprecisionPerc  = cols[22] !== undefined ? cols[22] : "";
-            const oci               = cols[23] !== undefined ? cols[23] : "";
-            const totalCost          = cols[18] !== undefined ? cols[18] : "";
+            const overestimationPerc = cols[21] !== undefined ? cols[21] : ""; // V
+            const overplacementPerc  = cols[22] !== undefined ? cols[22] : ""; // W
+            const overprecisionPerc  = cols[23] !== undefined ? cols[23] : ""; // X
+            const oci               = cols[24] !== undefined ? cols[24] : ""; // Y
+            const totalCost          = cols[19] !== undefined ? cols[19] : ""; // T
 
             const riga = document.createElement("tr");
             riga.innerHTML = `
