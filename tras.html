@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title data-i18n-key="title">Overconfidence & Beer Game</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f2f2f2; padding: 20px; position: relative; }
+    .hidden { display: none; }
+    .section {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 800px;
+      margin: 20px auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h2 { color: #2c3e50; margin-bottom: 15px; }
+    label, p { margin: 10px 0 5px; font-size: 14px; }
+    input, select, button { margin: 5px 0 15px; padding: 8px; font-size: 14px; }
+    button { background-color: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    button:hover { background-color: #2980b9; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    .required-error { border: 2px solid red !important; }
+
+    /* Stili per Overprecision */
+    .overprecision-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .overprecision-row label {
+      flex: 0 0 300px;
+      margin: 0;
+      font-weight: 500;
+      font-size: 14px;
+    }
+    .overprecision-row .inputs-container {
+      display: flex;
+      gap: 10px;
+      flex: 1;
+    }
+    .overprecision-row .inputs-container input {
+      width: 100px;
+    }
+
+    /* Stili per barra di avanzamento */
+    .progress-wrapper {
+      margin: 20px 0;
+    }
+    .progress-bar {
+      position: relative;
+      background: #e0e0e0;
+      border-radius: 10px;
+      height: 20px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0;
+      background: #3498db;
+      border-radius: 10px 0 0 10px;
+      transition: width 0.3s ease;
+    }
+    .progress-label {
+      text-align: center;
+      margin-top: 5px;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    /* Selettore di lingua in alto a destra */
+    #langSwitcher {
+      position: fixed;
+      top: 10px;
+      right: 20px;
+      font-size: 14px;
+    }
+ #langSwitcher button {
+  background: none;
+  border: 0px solid #3498db;
+  color: #3498db;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-weight: bold;
+  transition: background 0.2s, color 0.2s;
+  margin-left: 0px; /* se vuoi mantenere lo spazio tra i bottoni */
+}
+
+#langSwitcher button.selected {
+  background: #3498db;
+  color: white;
+}
+
+  </style>
+
+  <!-- SheetJS per caricare l’XLSX nell’Admin Panel -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.18.7/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+
+  <!-- ==================== Selettore Lingua ==================== -->
+  <div id="langSwitcher">
+    <button id="btn-en" class="selected">EN</button> |
+    <button id="btn-it">IT</button>
+  </div>
+
+  <!-- ========================= Nickname Section ========================= -->
+  <div class="section" id="nicknameSection">
+    <h2 data-i18n-key="enterNicknameTitle">Enter your nickname</h2>
+    <input type="text" id="nickname" placeholder="Nickname" />
+    <button data-i18n-key="btnStart" onclick="startOverestimation()">Start</button>
+  </div>
+
+  <!-- ========================= Admin Panel ========================= -->
+  <div class="section hidden" id="adminSection">
+    <h2 data-i18n-key="adminPanelTitle">Admin Panel</h2>
+    <button data-i18n-key="btnDownload" onclick="downloadSheet()">Download Google Sheet XLSX</button>
+    <table>
+      <thead>
+        <tr>
+          <th data-i18n-key="thNickname">Nickname</th>
+          <th data-i18n-key="thOverest">Overestimation %</th>
+          <th data-i18n-key="thOverplac">Overplacement %</th>
+          <th data-i18n-key="thOverprec">Overprecision %</th>
+          <th data-i18n-key="thOCI">OCI %</th>
+          <th data-i18n-key="thTotalCost">Total Cost</th>
+        </tr>
+      </thead>
+      <tbody id="adminTable"></tbody>
+    </table>
+  </div>
+
+  <!-- ========================= Overestimation Section ========================= -->
+  <div class="section hidden" id="overestimationSection">
+    <h2 data-i18n-key="overestimationCalcTitle">Overestimation Calculation</h2>
+    <label data-i18n-key="qEst1">1. How many answers do you think you got right out of 5? <span style="color:red;">*</span></label>
+    <input type="number" id="estimatedScore" min="0" max="5" placeholder="0–5" />
+
+    <p data-i18n-key="qEst2">2. What is the capital of Australia? <span style="color:red;">*</span></p>
+    <select id="q1">
+      <option value="" selected data-i18n-key="optChoose">Choose an option</option>
+      <option>Sydney</option>
+      <option>Canberra</option>
+      <option>Melbourne</option>
+      <option>Brisbane</option>
+    </select>
+
+    <p data-i18n-key="qEst3">3. What is 12 × 8? <span style="color:red;">*</span></p>
+    <select id="q2">
+      <option value="" selected data-i18n-key="optChoose">Choose an option</option>
+      <option>80</option>
+      <option>96</option>
+      <option>108</option>
+      <option>92</option>
+    </select>
+
+    <p data-i18n-key="qEst4">4. In what year was Google founded? <span style="color:red;">*</span></p>
+    <select id="q3">
+      <option value="" selected data-i18n-key="optChoose">Choose an option</option>
+      <option>1996</option>
+      <option>1998</option>
+      <option>2000</option>
+      <option>2001</option>
+    </select>
+
+    <p data-i18n-key="qEst5">5. Which metal conducts electricity best? <span style="color:red;">*</span></p>
+    <select id="q4">
+      <option value="" selected data-i18n-key="optChoose">Choose an option</option>
+      <option>Gold</option>
+      <option>Copper</option>
+      <option>Silver</option>
+      <option>Aluminum</option>
+    </select>
+
+    <p data-i18n-key="qEst6">6. Where is Mount Kilimanjaro located? <span style="color:red;">*</span></p>
+    <select id="q5">
+      <option value="" selected data-i18n-key="optChoose">Choose an option</option>
+      <option>Kenya</option>
+      <option>Tanzania</option>
+      <option>Ethiopia</option>
+      <option>Uganda</option>
+    </select>
+
+    <button data-i18n-key="btnNext" onclick="startOverplacement()">Next</button>
+  </div>
+
+  <!-- ========================= Overplacement Section ========================= -->
+  <div class="section hidden" id="overplacementSection">
+    <h2 data-i18n-key="overplacementTitle">Overplacement</h2>
+    <label data-i18n-key="qPlacement1">Where do you think you rank compared to others in the quiz? <span style="color:red;">*</span></label>
+    <select id="placement">
+      <option value="" selected data-i18n-key="optChoose">Choose an option</option>
+      <option>Top 10%</option>
+      <option>Top 25%</option>
+      <option>Average</option>
+      <option>Bottom 25%</option>
+      <option>Bottom 10%</option>
+    </select>
+    <button data-i18n-key="btnNext" onclick="startOverprecision()">Next</button>
+  </div>
+
+  <!-- ========================= Overprecision Section ========================= -->
+  <div class="section hidden" id="overprecisionSection">
+    <h2 data-i18n-key="overprecisionTitle">Overprecision</h2>
+    <p data-i18n-key="overprecisionInstr">With 90% confidence, estimate the following ranges (all fields required):</p>
+
+    <!-- Domanda 1 -->
+    <div class="overprecision-row">
+      <label for="franceMin" data-i18n-key="qPrec1">1. Population of France (in millions): <span style="color:red;">*</span></label>
+      <div class="inputs-container">
+        <input type="number" id="franceMin" placeholder="Min" />
+        <input type="number" id="franceMax" placeholder="Max" />
+      </div>
+    </div>
+
+    <!-- Domanda 2 -->
+    <div class="overprecision-row">
+      <label for="phoneMin" data-i18n-key="qPrec2">2. Year the telephone was invented: <span style="color:red;">*</span></label>
+      <div class="inputs-container">
+        <input type="number" id="phoneMin" placeholder="Min" />
+        <input type="number" id="phoneMax" placeholder="Max" />
+      </div>
+    </div>
+
+    <!-- Domanda 3 -->
+    <div class="overprecision-row">
+      <label for="romeMin" data-i18n-key="qPrec3">3. Distance from Rome to Berlin (km): <span style="color:red;">*</span></label>
+      <div class="inputs-container">
+        <input type="number" id="romeMin" placeholder="Min" />
+        <input type="number" id="romeMax" placeholder="Max" />
+      </div>
+    </div>
+
+    <!-- Domanda 4 -->
+    <div class="overprecision-row">
+      <label for="bloodMin" data-i18n-key="qPrec4">4. Average liters of blood in a human body: <span style="color:red;">*</span></label>
+      <div class="inputs-container">
+        <input type="number" id="bloodMin" placeholder="Min" />
+        <input type="number" id="bloodMax" placeholder="Max" />
+      </div>
+    </div>
+
+    <!-- Domanda 5 -->
+    <div class="overprecision-row">
+      <label for="weeksMin" data-i18n-key="qPrec5">5. Number of weeks in a year: <span style="color:red;">*</span></label>
+      <div class="inputs-container">
+        <input type="number" id="weeksMin" placeholder="Min" />
+        <input type="number" id="weeksMax" placeholder="Max" />
+      </div>
+    </div>
+
+    <button data-i18n-key="btnStartSim" onclick="showRules()">Start Beer Game</button>
+  </div>
+
+  <!-- ========================= Rules Section ========================= -->
+  <div class="section hidden" id="rulesSection">
+    <h2 data-i18n-key="rulesTitle">Simulation Rules</h2>
+    <p data-i18n-key="rulesLine1">In this simulation, you play the role of a Distributor in a beer supply chain.</p>
+    <p data-i18n-key="rulesLine2">Every week you receive an order from the Wholesaler and you have to decide how many cases to order from the Factory.</p>
+    <p data-i18n-key="rulesLine3">Your goal is to manage your inventory as best as possible: avoid both backlogs and excessive accumulations.</p>
+
+    <p><strong data-i18n-key="warningLabel">Warning:</strong></p>
+    <ul>
+      <li data-i18n-key="warn1">The final customer demand may vary, but it is not visible to you.</li>
+      <li data-i18n-key="warn2">Orders and deliveries arrive late, so you will have to plan carefully and adapt your decisions week after week.</li>
+    </ul>
+
+    <p data-i18n-key="rulesLine4">Enter your order each week in the <em>"Order to Factory"</em> field and click <em data-i18n-key="clickSubmitOrder">"Submit Order"</em>.</p>
+
+    <button data-i18n-key="btnBeginSim" onclick="beginGame()">Begin Simulation</button>
+  </div>
+
+  <!-- ========================= Beer Game Section ========================= -->
+  <div class="section hidden" id="gameSection">
+    <h2 data-i18n-key="gameTitle">Beer Game – Distributor Role</h2>
+
+    <!-- Barra di avanzamento BLU -->
+    <div class="progress-wrapper">
+      <div class="progress-bar">
+        <div id="progressFill" class="progress-fill"></div>
+      </div>
+      <div id="progressLabel" class="progress-label">Week: 1 / 36</div>
+    </div>
+
+    <!-- Tabella dei valori -->
+    <table>
+      <tr>
+        <td><strong data-i18n-key="labelWholesalerOrder">Wholesaler order:</strong></td>
+        <td><span id="demand">4</span></td>
+      </tr>
+      <tr>
+        <td><strong data-i18n-key="labelInventory">Inventory:</strong></td>
+        <td><span id="inventory">12</span></td>
+      </tr>
+      <tr>
+        <td><strong data-i18n-key="labelBacklog">Backlog (orders received and not yet processed):</strong></td>
+        <td><span id="backlog">0</span></td>
+      </tr>
+      <tr>
+        <td><strong data-i18n-key="labelLastDelivery">Last delivery:</strong></td>
+        <td><span id="delivery">0</span></td>
+      </tr>
+      <tr>
+        <td><strong data-i18n-key="labelOrderToFactory">Order to factory:</strong></td>
+        <td>
+          <input
+            type="number"
+            id="orderInput"
+            min="0"
+            value="4"
+            style="width: 100px;"
+          />
+        </td>
+      </tr>
+    </table>
+
+    <button data-i18n-key="btnSubmitOrder" onclick="nextWeek()">Submit Order</button>
+  </div>
+
+  <!-- ========================= Final Results Section ========================= -->
+  <div class="section hidden" id="finalResults">
+    <h2 data-i18n-key="finalResultsTitle">Final Results</h2>
+    <p id="costOutput"></p>
+    <table>
+      <thead>
+        <tr>
+          <th data-i18n-key="thNickname">Nickname</th>
+          <th data-i18n-key="thOverest">Overestimation %</th>
+          <th data-i18n-key="thOverplac">Overplacement %</th>
+          <th data-i18n-key="thOverprec">Overprecision %</th>
+          <th data-i18n-key="thOCI">OCI %</th>
+          <th data-i18n-key="thTotalCost">Total Cost</th>
+        </tr>
+      </thead>
+      <tbody id="resultsTable"></tbody>
+    </table>
+  </div>
+
+  <!-- ========================= SCRIPT ========================= -->
+  <script>
+    // Dizionario traduzioni
+    const translations = {
+      en: {
+        title:                 "Overconfidence & Beer Game",
+        enterNicknameTitle:    "Enter your nickname",
+        btnStart:              "Start",
+        adminPanelTitle:       "Admin Panel",
+        btnDownload:           "Download Google Sheet XLSX",
+        thNickname:            "Nickname",
+        thOverest:             "Overestimation %",
+        thOverplac:            "Overplacement %",
+        thOverprec:            "Overprecision %",
+        thOCI:                 "OCI %",
+        thTotalCost:           "Total Cost",
+        overestimationCalcTitle: "Overestimation Calculation",
+        qEst1:                 "1. How many answers do you think you got right out of 5? <span style=\"color:red;\">*</span>",
+        qEst2:                 "2. What is the capital of Australia? <span style=\"color:red;\">*</span>",
+        qEst3:                 "3. What is 12 × 8? <span style=\"color:red;\">*</span>",
+        qEst4:                 "4. In what year was Google founded? <span style=\"color:red;\">*</span>",
+        qEst5:                 "5. Which metal conducts electricity best? <span style=\"color:red;\">*</span>",
+        qEst6:                 "6. Where is Mount Kilimanjaro located? <span style=\"color:red;\">*</span>",
+        optChoose:             "Choose an option",
+        btnNext:               "Next",
+        overplacementTitle:    "Overplacement",
+        qPlacement1:           "Where do you think you rank compared to others in the quiz? <span style=\"color:red;\">*</span>",
+        overprecisionTitle:    "Overprecision",
+        overprecisionInstr:    "With 90% confidence, estimate the following ranges (all fields required):",
+        qPrec1:                "1. Population of France (in millions): <span style=\"color:red;\">*</span>",
+        qPrec2:                "2. Year the telephone was invented: <span style=\"color:red;\">*</span>",
+        qPrec3:                "3. Distance from Rome to Berlin (km): <span style=\"color:red;\">*</span>",
+        qPrec4:                "4. Average liters of blood in a human body: <span style=\"color:red;\">*</span>",
+        qPrec5:                "5. Number of weeks in a year: <span style=\"color:red;\">*</span>",
+        btnStartSim:           "Start Beer Game",
+        rulesTitle:            "Simulation Rules",
+        rulesLine1:            "In this simulation, you play the role of a Distributor in a beer supply chain.",
+        rulesLine2:            "Every week you receive an order from the Wholesaler and you have to decide how many cases to order from the Factory.",
+        rulesLine3:            "Your goal is to manage your inventory as best as possible: avoid both backlogs and excessive accumulations.",
+        warningLabel:          "Warning:",
+        warn1:                 "The final customer demand may vary, but it is not visible to you.",
+        warn2:                 "Orders and deliveries arrive late, so you will have to plan carefully and adapt your decisions week after week.",
+        rulesLine4:            "Enter your order each week in the <em>\"Order to Factory\"</em> field and click <em>\"Submit Order\"</em>.",
+        btnBeginSim:           "Begin Simulation",
+        gameTitle:             "Beer Game – Distributor Role",
+        labelWholesalerOrder:  "Wholesaler order:",
+        labelInventory:        "Inventory:",
+        labelBacklog:          "Backlog (orders received and not yet processed):",
+        labelLastDelivery:     "Last delivery:",
+        labelOrderToFactory:   "Order to factory:",
+        btnSubmitOrder:        "Submit Order",
+        finalResultsTitle:     "Final Results"
+      },
+      it: {
+        title:                 "Overconfidence & Beer Game",
+        enterNicknameTitle:    "Inserisci il tuo nickname",
+        btnStart:              "Avvia",
+        adminPanelTitle:       "Pannello Admin",
+        btnDownload:           "Scarica Google Sheet XLSX",
+        thNickname:            "Nickname",
+        thOverest:             "Overestimation %",
+        thOverplac:            "Overplacement %",
+        thOverprec:            "Overprecision %",
+        thOCI:                 "OCI %",
+        thTotalCost:           "Costo Totale",
+        overestimationCalcTitle: "Calcolo Overestimation",
+        qEst1:                 "1. Quante risposte pensi di aver indovinato su 5? <span style=\"color:red;\">*</span>",
+        qEst2:                 "2. Qual è la capitale dell'Australia? <span style=\"color:red;\">*</span>",
+        qEst3:                 "3. Quanto fa 12 × 8? <span style=\"color:red;\">*</span>",
+        qEst4:                 "4. In che anno è stata fondata Google? <span style=\"color:red;\">*</span>",
+        qEst5:                 "5. Quale metallo conduce meglio l'elettricità? <span style=\"color:red;\">*</span>",
+        qEst6:                 "6. Dove si trova il Monte Kilimanjaro? <span style=\"color:red;\">*</span>",
+        optChoose:             "Scegli un’opzione",
+        btnNext:               "Avanti",
+        overplacementTitle:    "Overplacement",
+        qPlacement1:           "Dove pensi di posizionarti rispetto agli altri nel quiz? <span style=\"color:red;\">*</span>",
+        overprecisionTitle:    "Overprecision",
+        overprecisionInstr:    "Con 90% di confidenza, stima i seguenti intervalli (tutti i campi obbligatori):",
+        qPrec1:                "1. Popolazione della Francia (in milioni): <span style=\"color:red;\">*</span>",
+        qPrec2:                "2. Anno in cui è stato inventato il telefono: <span style=\"color:red;\">*</span>",
+        qPrec3:                "3. Distanza da Roma a Berlino (km): <span style=\"color:red;\">*</span>",
+        qPrec4:                "4. Litri di sangue medi in un corpo umano: <span style=\"color:red;\">*</span>",
+        qPrec5:                "5. Numero di settimane in un anno: <span style=\"color:red;\">*</span>",
+        btnStartSim:           "Inizia Beer Game",
+        rulesTitle:            "Regole della Simulazione",
+        rulesLine1:            "In questa simulazione interpreti il ruolo di un Distributore in una catena di approvvigionamento della birra.",
+        rulesLine2:            "Ogni settimana ricevi un ordine dal Grossista e devi decidere quante casse ordinare dalla Fabbrica.",
+        rulesLine3:            "Il tuo obiettivo è gestire al meglio l’inventario: evitare sia arretrati sia accumuli eccessivi.",
+        warningLabel:          "Attenzione:",
+        warn1:                 "La domanda del cliente finale può variare, ma non è visibile a te.",
+        warn2:                 "Ordini e consegne arrivano in ritardo, quindi dovrai pianificare con cura e adattare le tue decisioni settimana dopo settimana.",
+        rulesLine4:            "Inserisci il tuo ordine ogni settimana nel campo <em>\"Order to Factory\"</em> e fai clic su <em>\"Submit Order\"</em>.",
+        btnBeginSim:           "Inizia Simulazione",
+        gameTitle:             "Beer Game – Ruolo Distributore",
+        labelWholesalerOrder:  "Ordine dal Grossista:",
+        labelInventory:        "Inventario:",
+        labelBacklog:          "Backlog (ordini ricevuti e non ancora evasi):",
+        labelLastDelivery:     "Ultima consegna:",
+        labelOrderToFactory:   "Ordine alla fabbrica:",
+        btnSubmitOrder:        "Invia Ordine",
+        finalResultsTitle:     "Risultati Finali"
+      }
+    };
+
+    // Lingua attuale (di default: 'en')
+    let currentLang = "en";
+
+    // ==================== Funzione per applicare le traduzioni ====================
+    function applyTranslations() {
+      document.querySelectorAll("[data-i18n-key]").forEach(el => {
+        const key = el.getAttribute("data-i18n-key");
+        if (translations[currentLang][key] !== undefined) {
+          el.innerHTML = translations[currentLang][key];
+        }
+      });
+    }
+
+    // ==================== Gestione selezione lingua ====================
+    document.getElementById("btn-en").addEventListener("click", () => {
+      currentLang = "en";
+      document.getElementById("btn-en").classList.add("selected");
+      document.getElementById("btn-it").classList.remove("selected");
+      applyTranslations();
+    });
+    document.getElementById("btn-it").addEventListener("click", () => {
+      currentLang = "it";
+      document.getElementById("btn-it").classList.add("selected");
+      document.getElementById("btn-en").classList.remove("selected");
+      applyTranslations();
+    });
+
+    // Applico subito la lingua di default
+    applyTranslations();
+
+    // ==================== Resto del codice (invariato) ====================
+
+    // Valori “veri” per overprecision, costanti
+    const TRUE_VALUES = {
+      france:   67.5,
+      phone:    1876,
+      rome:     1181,
+      blood:    5,
+      weeks:    52
+    };
+
+    // Variabili globali
+    let nickname = "",
+      week = 1,
+      inventory = 12,
+      backlog = 0,
+      deliveryQueue = [0, 0],
+      costs = [],
+      totalCost = 0;
+
+    // URL del Google Sheet pubblicato come XLSX
+    const SHEET_XLSX_URL =
+      "https://docs.google.com/spreadsheets/d/e/2PACX-1vRTXgTmxNiE6huxyAb9fsEMYsuyYydv7tQ1i5jIipyYFwm-CZNxYrF5iaW5sOvGVN86vSkDv6c3Ilt_/pub?output=xlsx";
+
+    // Supporto "Enter" nel campo nickname
+    document.addEventListener("DOMContentLoaded", function () {
+      const nicknameInput = document.getElementById("nickname");
+      nicknameInput.addEventListener("keypress", function (e) {
+        if (e.key === "Enter") {
+          startOverestimation();
+        }
+      });
+    });
+
+    // ---------- Funzioni di navigazione tra le sezioni ----------
+    function startOverestimation() {
+      nickname = document.getElementById("nickname").value.trim();
+      const nickField = document.getElementById("nickname");
+      nickField.classList.remove("required-error");
+
+      if (!nickname) {
+        alert(currentLang === "it"
+          ? "Per favore compila tutti i campi per procedere"
+          : "Please fill all fields to proceed");
+        nickField.classList.add("required-error");
+        return;
+      }
+
+      if (nickname === "admin") {
+        const pwd = prompt(currentLang === "it"
+          ? "Inserisci la password:"
+          : "Enter password:");
+        if (pwd === "password") {
+          document.getElementById("nicknameSection").classList.add("hidden");
+          document.getElementById("adminSection").classList.remove("hidden");
+          loadXlsxData();
+        } else {
+          alert(currentLang === "it"
+            ? "Password errata"
+            : "Wrong password");
+        }
+        return;
+      }
+
+      document.getElementById("nicknameSection").classList.add("hidden");
+      document.getElementById("overestimationSection").classList.remove("hidden");
+    }
+
+    function startOverplacement() {
+      const estimated = document.getElementById("estimatedScore");
+      const selects = ["q1", "q2", "q3", "q4", "q5"];
+      estimated.classList.remove("required-error");
+      selects.forEach(id => document.getElementById(id).classList.remove("required-error"));
+
+      let missing = false;
+
+      if (
+        estimated.value.trim() === "" ||
+        isNaN(estimated.value) ||
+        Number(estimated.value) < 0 ||
+        Number(estimated.value) > 5
+      ) {
+        missing = true;
+        estimated.classList.add("required-error");
+      }
+      selects.forEach(id => {
+        const sel = document.getElementById(id);
+        if (sel.value.trim() === "") {
+          missing = true;
+          sel.classList.add("required-error");
+        }
+      });
+
+      if (missing) {
+        alert(currentLang === "it"
+          ? "Per favore compila tutti i campi per procedere"
+          : "Please fill all fields to proceed");
+        return;
+      }
+
+      document.getElementById("overestimationSection").classList.add("hidden");
+      document.getElementById("overplacementSection").classList.remove("hidden");
+    }
+
+    function startOverprecision() {
+      const placement = document.getElementById("placement");
+      placement.classList.remove("required-error");
+
+      if (placement.value.trim() === "") {
+        alert(currentLang === "it"
+          ? "Per favore compila tutti i campi per procedere"
+          : "Please fill all fields to proceed");
+        placement.classList.add("required-error");
+        return;
+      }
+
+      document.getElementById("overplacementSection").classList.add("hidden");
+      document.getElementById("overprecisionSection").classList.remove("hidden");
+    }
+
+    function showRules() {
+      // Validazione Overprecision
+      const fields = [
+        { min: document.getElementById("franceMin"), max: document.getElementById("franceMax") },
+        { min: document.getElementById("phoneMin"), max: document.getElementById("phoneMax") },
+        { min: document.getElementById("romeMin"), max: document.getElementById("romeMax") },
+        { min: document.getElementById("bloodMin"), max: document.getElementById("bloodMax") },
+        { min: document.getElementById("weeksMin"), max: document.getElementById("weeksMax") }
+      ];
+
+      let missing = false;
+      fields.forEach(pair => {
+        pair.min.classList.remove("required-error");
+        pair.max.classList.remove("required-error");
+        if (pair.min.value.trim() === "" || isNaN(pair.min.value)) {
+          missing = true;
+          pair.min.classList.add("required-error");
+        }
+        if (pair.max.value.trim() === "" || isNaN(pair.max.value)) {
+          missing = true;
+          pair.max.classList.add("required-error");
+        }
+      });
+
+      if (missing) {
+        alert(currentLang === "it"
+          ? "Per favore compila tutti i campi per procedere"
+          : "Please fill all fields to proceed");
+        return;
+      }
+
+      let invalidRange = false;
+      fields.forEach(pair => {
+        const minVal = parseFloat(pair.min.value);
+        const maxVal = parseFloat(pair.max.value);
+        if (maxVal < minVal) {
+          invalidRange = true;
+          pair.min.classList.add("required-error");
+          pair.max.classList.add("required-error");
+        }
+      });
+
+      if (invalidRange) {
+        alert(currentLang === "it"
+          ? "Ogni “Max” deve essere maggiore o uguale al corrispondente “Min”"
+          : "Each “Max” must be greater than or equal to its corresponding “Min”");
+        return;
+      }
+
+      document.getElementById("overprecisionSection").classList.add("hidden");
+      document.getElementById("rulesSection").classList.remove("hidden");
+    }
+
+    function beginGame() {
+      document.getElementById("rulesSection").classList.add("hidden");
+      document.getElementById("gameSection").classList.remove("hidden");
+      updateProgressBar();
+    }
+
+    function nextWeek() {
+      const demand = week <= 4 ? 4 : 8;
+      const order = parseInt(document.getElementById("orderInput").value);
+      const delivery = deliveryQueue.shift();
+      inventory += delivery;
+      let shipped = Math.min(inventory, demand + backlog);
+      backlog = Math.max(0, demand + backlog - inventory);
+      inventory -= shipped;
+      deliveryQueue.push(order);
+      const cost = 0.5 * inventory + backlog;
+      costs.push(cost);
+      totalCost += cost;
+
+      document.getElementById("demand").textContent = demand;
+      document.getElementById("inventory").textContent = inventory;
+      document.getElementById("backlog").textContent = backlog;
+      document.getElementById("delivery").textContent = delivery;
+      updateProgressBar();
+
+      if (week === 36) {
+        console.log("⚙️ Completata settimana 36: calcolo metriche e invio dati");
+
+        // 1) QuizScore
+        const estimated       = parseInt(document.getElementById("estimatedScore").value);
+        const userAnswers     = {
+          q1: document.getElementById("q1").value,
+          q2: document.getElementById("q2").value,
+          q3: document.getElementById("q3").value,
+          q4: document.getElementById("q4").value,
+          q5: document.getElementById("q5").value
+        };
+        const correctAnswers = ["Canberra", "96", "1998", "Silver", "Tanzania"];
+        let quizScore = 0;
+        if (userAnswers.q1 === correctAnswers[0]) quizScore++;
+        if (userAnswers.q2 === correctAnswers[1]) quizScore++;
+        if (userAnswers.q3 === correctAnswers[2]) quizScore++;
+        if (userAnswers.q4 === correctAnswers[3]) quizScore++;
+        if (userAnswers.q5 === correctAnswers[4]) quizScore++;
+
+        // 2) Overestimation %
+        const overestimation = ((estimated - quizScore) / 5) * 100;
+
+        // 3) Overplacement %
+        const placement = document.getElementById("placement").value;
+        let overplacementScore = 0;
+        switch (placement) {
+          case "Top 10%":     overplacementScore = 90; break;
+          case "Top 25%":     overplacementScore = 75; break;
+          case "Average":     overplacementScore = 50; break;
+          case "Bottom 25%":  overplacementScore = 25; break;
+          case "Bottom 10%":  overplacementScore = 10; break;
+          default:            overplacementScore = 0;  break;
+        }
+
+        // 4) Overprecision %
+        const op = {
+          franceMin: parseFloat(document.getElementById("franceMin").value),
+          franceMax: parseFloat(document.getElementById("franceMax").value),
+          phoneMin:  parseFloat(document.getElementById("phoneMin").value),
+          phoneMax:  parseFloat(document.getElementById("phoneMax").value),
+          romeMin:   parseFloat(document.getElementById("romeMin").value),
+          romeMax:   parseFloat(document.getElementById("romeMax").value),
+          bloodMin:  parseFloat(document.getElementById("bloodMin").value),
+          bloodMax:  parseFloat(document.getElementById("bloodMax").value),
+          weeksMin:  parseFloat(document.getElementById("weeksMin").value),
+          weeksMax:  parseFloat(document.getElementById("weeksMax").value)
+        };
+        let correctCount = 0;
+        if (op.franceMin <= TRUE_VALUES.france  && op.franceMax >= TRUE_VALUES.france)  correctCount++;
+        if (op.phoneMin  <= TRUE_VALUES.phone   && op.phoneMax  >= TRUE_VALUES.phone)   correctCount++;
+        if (op.romeMin   <= TRUE_VALUES.rome    && op.romeMax   >= TRUE_VALUES.rome)    correctCount++;
+        if (op.bloodMin  <= TRUE_VALUES.blood   && op.bloodMax  >= TRUE_VALUES.blood)   correctCount++;
+        if (op.weeksMin  <= TRUE_VALUES.weeks   && op.weeksMax  >= TRUE_VALUES.weeks)   correctCount++;
+        const overprecisionScore = (correctCount / 5) * 100;
+
+        // 5) OCI = media dei tre indici
+        const oci = ( overestimation + overplacementScore + overprecisionScore ) / 3;
+
+        // Preparo l'oggetto dati da inviare
+        const data = {
+          nickname: nickname,
+          estimatedScore: estimated,
+          quizAnswers: userAnswers,
+          placement: placement,
+          overprecisionRanges: {
+            franceMin: op.franceMin,
+            franceMax: op.franceMax,
+            phoneMin:  op.phoneMin,
+            phoneMax:  op.phoneMax,
+            romeMin:   op.romeMin,
+            romeMax:   op.romeMax,
+            bloodMin:  op.bloodMin,
+            bloodMax:  op.bloodMax,
+            weeksMin:  op.weeksMin,
+            weeksMax:  op.weeksMax
+          },
+          quizScore: quizScore,
+          overestimation: overestimation,
+          overplacementScore: overplacementScore,
+          overprecisionScore: overprecisionScore,
+          oci: oci,
+          totalCost: totalCost
+        };
+
+        console.log("▶ Oggetto data inviato al WebApp:", data);
+
+        // Invio dati su Google Sheets
+        fetch(
+          "https://script.google.com/macros/s/AKfycbwJU4iJM9LxfrFLxsDcOvYvFDf52_u0xTXCFn_SHJlKCLjGFXv9lC27ld_xjr0SZuqm/exec",
+          {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          }
+        );
+
+        // Nascondo il gioco e mostro i risultati finali
+        document.getElementById("gameSection").classList.add("hidden");
+        document.getElementById("finalResults").classList.remove("hidden");
+       
+        // Riepilogo a video (finalResults)
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${nickname}</td>
+          <td>${overestimation.toFixed(1)}%</td>
+          <td>${overplacementScore}%</td>
+          <td>${overprecisionScore.toFixed(1)}%</td>
+          <td>${oci.toFixed(1)}%</td>
+          <td>€${totalCost.toFixed(2)}</td>
+        `;
+        document.getElementById("resultsTable").appendChild(row);
+
+        return;
+      }
+
+      week++;
+    }
+
+    function updateProgressBar() {
+      const fillDiv = document.getElementById("progressFill");
+      const labelDiv = document.getElementById("progressLabel");
+      const percentage = Math.min((week / 36) * 100, 100);
+      fillDiv.style.width = percentage + "%";
+      labelDiv.textContent = `Week: ${week} / 36`;
+    }
+
+    function loadXlsxData() {
+      const tbody = document.getElementById("adminTable");
+      tbody.innerHTML = "";
+
+      fetch(SHEET_XLSX_URL)
+        .then((response) => {
+          if (!response.ok) throw new Error("Errore caricamento XLSX");
+          return response.arrayBuffer();
+        })
+        .then((arrayBuffer) => {
+          const data = new Uint8Array(arrayBuffer);
+          const workbook = XLSX.read(data, { type: "array" });
+          const firstSheetName = workbook.SheetNames[0];
+          const sheet = workbook.Sheets[firstSheetName];
+          const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+          if (rows.length < 2) {
+            const rigaVuota = document.createElement("tr");
+            rigaVuota.innerHTML = `<td colspan="6">${currentLang === "it" ? "Nessun dato" : "No data"}</td>`;
+            tbody.appendChild(rigaVuota);
+            return;
+          }
+
+          for (let i = 1; i < rows.length; i++) {
+            const cols = rows[i];
+            if (!cols[0]) continue;
+
+            // Leggo solo i campi richiesti:
+            const nickname           = cols[0]  !== undefined ? cols[0]  : "";
+            const overestimationPerc = cols[20] !== undefined ? cols[20] : "";
+            const overplacementPerc  = cols[21] !== undefined ? cols[21] : "";
+            const overprecisionPerc  = cols[22] !== undefined ? cols[22] : "";
+            const oci               = cols[23] !== undefined ? cols[23] : "";
+            const totalCost          = cols[18] !== undefined ? cols[18] : "";
+
+            const riga = document.createElement("tr");
+            riga.innerHTML = `
+              <td>${nickname}</td>
+              <td>${overestimationPerc}%</td>
+              <td>${overplacementPerc}%</td>
+              <td>${overprecisionPerc}%</td>
+              <td>${oci}%</td>
+              <td>€${totalCost}</td>
+            `;
+            tbody.appendChild(riga);
+          }
+        })
+        .catch((err) => {
+          console.error("Errore lettura XLSX:", err);
+          const rigaErrore = document.createElement("tr");
+          rigaErrore.innerHTML = `<td colspan="6">${currentLang === "it" ? "Impossibile caricare i dati dal Google Sheet" : "Unable to load data from Google Sheet"}</td>`;
+          tbody.appendChild(rigaErrore);
+        });
+    }
+
+    function downloadSheet() {
+      window.open(SHEET_XLSX_URL, "_blank");
+    }
+  </script>
+</body>
+</html>
