@@ -628,19 +628,47 @@
       show("overestimationSection");
     }
 
-    function startOverplacement() {
-      const est = el("estimatedScore");
-      est.classList.remove("required-error");
-      if (est.value.trim()===""||isNaN(est.value)||Number(est.value)<0||Number(est.value)>5) {
-        alert(currentLang==="it"
-          ? "Per favore compila tutti i campi per procedere"
-          : "Please fill all fields to proceed");
-        est.classList.add("required-error");
-        return;
-      }
-      hide("overestimationSection");
-      show("overplacementSection");
+function startOverplacement() {
+  // rimuovi eventuali errori preesistenti
+  const fields = [
+    el("q1"), el("q2"), el("q3"),
+    el("q4"), el("q5"), el("estimatedScore")
+  ];
+  fields.forEach(f => f.classList.remove("required-error"));
+
+  // controlla se qualcuno è mancante o non valido
+  let miss = false;
+
+  // le prime 5 sono select, devono avere value
+  ["q1","q2","q3","q4","q5"].forEach(id => {
+    const sel = el(id);
+    if (!sel.value) {
+      sel.classList.add("required-error");
+      miss = true;
     }
+  });
+
+  // ultimo campo: numero da 0 a 5
+  const est = el("estimatedScore");
+  const v = est.value.trim();
+  if (v === "" || isNaN(v) || Number(v) < 0 || Number(v) > 5) {
+    est.classList.add("required-error");
+    miss = true;
+  }
+
+  if (miss) {
+    alert(
+      currentLang === "it"
+        ? "Per favore compila tutti i campi per procedere"
+        : "Please fill all fields to proceed"
+    );
+    return;
+  }
+
+  // se tutto ok, vai avanti
+  hide("overestimationSection");
+  show("overplacementSection");
+}
 
     function startOverprecision() {
       const pl = el("placement");
